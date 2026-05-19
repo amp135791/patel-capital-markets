@@ -387,6 +387,8 @@ body.transitioning .cinema-bar {
   top: 50%;
   transform: translateX(-50%) translateY(-50%);
   animation: backdropFloat 8s ease-in-out infinite;
+  user-select: none;
+  letter-spacing: -0.02em;
   z-index: 2;
   pointer-events: none;
   font-family: 'Cormorant Garamond', serif;
@@ -528,7 +530,26 @@ body.transitioning .cinema-bar {
 /* Center text alignment overrides for split */
 .scene-copy.split-layout .stat-row,
 .scene-copy.split-layout .tag-row,
-.scene-copy.split-layout .modes-row {
+.scene-copy.split-layout .mode-btn {
+  position: relative;
+  overflow: hidden;
+}
+.mode-btn::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 1px;
+  background: var(--brass);
+  transition: width 0.3s ease;
+}
+.mode-btn.active::before,
+.mode-btn:hover::before {
+  width: 100%;
+}
+
+.modes-row {
   justify-content: flex-start;
 }
 .scene-copy.split-layout .title-rule {
@@ -844,6 +865,7 @@ body.transitioning .cinema-bar {
 
 .section-btn:hover {
   opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .section-btn__number {
@@ -2138,12 +2160,13 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(201,169,110,0.55); }
   gap: 16px;
   position: relative;
   padding-bottom: 20px;
-  opacity: 0.35;
-  transform: translateX(-8px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  opacity: 0.25;
+  transform: translateX(-16px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
 }
 .connector-stage.revealed {
   opacity: 1;
+  transform: translateX(0) !important;
   transform: translateX(0);
 }
 .connector-stage-left {
@@ -5886,6 +5909,7 @@ const SECTIONS = [
     id: 'engage',
     preTitle: 'Contact',
     title: 'Bring Us Your Complex Deal',
+    poetic: 'The deals that don't fit anywhere else are the ones we're built for.',
     body: 'The deals that don\'t fit anywhere else are the ones we\'re built for. Reach out with the sponsor memo, the rent roll, or just a thesis.',
     stats: [],
     tags: ['New Deals', 'Sponsors', 'Capital Partners'],
@@ -6129,6 +6153,47 @@ function updateCopyContent(idx) {
     }
   }
 
+  // Capital stack diagram (Home section 0)
+    if (idx === 0) {
+      const existingStack = copyEl.querySelector('.capital-stack-diagram');
+      if (!existingStack) {
+        const sd = document.createElement('div');
+        sd.className = 'capital-stack-diagram';
+        sd.style.cssText = 'margin:22px auto 0;max-width:380px;opacity:0;transition:opacity 0.9s ease 0.5s';
+        const stackLayers = [
+          { label: 'SENIOR DEBT',       pct: 0.62, color: 'rgba(201,169,110,0.22)', top: 'rgba(201,169,110,0.5)', detail: '50–65% LTV' },
+          { label: 'MEZZANINE',         pct: 0.15, color: 'rgba(201,169,110,0.14)', top: 'rgba(201,169,110,0.35)', detail: '65–75%' },
+          { label: 'PREFERRED EQUITY',  pct: 0.10, color: 'rgba(127,184,156,0.12)', top: 'rgba(127,184,156,0.3)', detail: '75–80%' },
+          { label: 'COMMON EQUITY',     pct: 0.13, color: 'rgba(201,169,110,0.09)', top: 'rgba(201,169,110,0.25)', detail: '80–100%' }
+        ];
+        const totalH = 180;
+        const barW = 145;
+        const x0 = 30;
+        let cumY = 12;
+        let layersHTML = '';
+        stackLayers.forEach(function(lay) {
+          const barH = Math.round(lay.pct * totalH);
+          layersHTML += '<rect x="' + x0 + '" y="' + cumY + '" width="' + barW + '" height="' + barH + '" fill="' + lay.color + '" rx="1"/>';
+          layersHTML += '<rect x="' + x0 + '" y="' + cumY + '" width="' + barW + '" height="2" fill="' + lay.top + '" rx="1"/>';
+          const ty = cumY + Math.max(barH/2, 9);
+          layersHTML += '<text x="' + (x0 + barW + 10) + '" y="' + ty + '" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,0.5)">' + lay.label + '</text>';
+          layersHTML += '<text x="' + (x0 + barW + 10) + '" y="' + (ty + 11) + '" font-family="Space Mono" font-size="6.5" fill="rgba(201,169,110,0.28)">' + lay.detail + '</text>';
+          cumY += barH;
+        });
+        sd.innerHTML = '<svg viewBox="0 0 340 200" width="100%" height="auto" style="display:block">'
+          + '<text x="' + x0 + '" y="8" font-family="Space Mono" font-size="6.5" fill="rgba(201,169,110,0.3)" letter-spacing="0.2em">CAPITAL STACK</text>'
+          + layersHTML
+          + '<line x1="' + x0 + '" y1="195" x2="' + (x0 + barW) + '" y2="195" stroke="rgba(201,169,110,0.15)" stroke-width="0.7"/>'
+          + '</svg>';
+        const statsRow = copyEl.querySelector('.stat-row');
+        const bodyEl = copyEl.querySelector('.body-text');
+        const anchor = statsRow || bodyEl;
+        if (anchor) anchor.after(sd);
+        else copyEl.appendChild(sd);
+        setTimeout(function() { sd.style.opacity = '1'; }, 500);
+      }
+    }
+
   // Platform Edge pillars visual (section 2)
     if (idx === 2) {
       const existingPillars = copyEl.querySelector('.platform-pillars');
@@ -6364,8 +6429,17 @@ function updateCopyContent(idx) {
         s.classList.toggle('revealed', i < revealedCount);
       });
     };
-    // Reveal first stage immediately
-    setTimeout(() => { if (window._updateConnectorStages) window._updateConnectorStages(1); }, 400);
+    // Staggered auto-reveal all 5 stages on entering Execution
+    const _connRevealTimers = [];
+    for (let si = 0; si < 5; si++) {
+      _connRevealTimers.push(setTimeout(function(n) {
+        return function() {
+          if (window._updateConnectorStages) window._updateConnectorStages(n + 1);
+        };
+      }(si), 300 + si * 420));
+    }
+    // Store timers for cleanup on section change
+    window._connRevealTimers = _connRevealTimers;
   }
   if (connectorEl) {
     connectorEl.style.display = idx === 6 ? 'flex' : 'none';
@@ -9303,11 +9377,15 @@ function goToSection(idx, dir) {
   document.body.classList.add('transitioning');
   setTimeout(() => document.body.classList.remove('transitioning'), 800);
 
-  // Flash
+  // Flash — direction-aware color
   const flash = document.getElementById('flash-overlay');
   if (flash) {
-    flash.style.opacity = '0.12';
-    setTimeout(() => { flash.style.opacity = '0'; }, 150);
+    // Forward: warm brass tint; Backward: cool green tint
+    flash.style.background = dir > 0
+      ? 'rgba(201,169,110,0.1)'
+      : 'rgba(127,184,156,0.08)';
+    flash.style.opacity = '1';
+    setTimeout(() => { flash.style.opacity = '0'; flash.style.background = ''; }, 180);
   }
 
   // Subtle logo impulse
@@ -10182,6 +10260,34 @@ function showSectionCopy(idx) {
       { opacity: 0, y: 10 },
       { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', delay: 0.38 }
     );
+
+    // Count-up animation for stat numbers
+    setTimeout(function() {
+      document.querySelectorAll('.stat-num, .vp-stat-val').forEach(function(el) {
+        const raw = el.getAttribute('data-raw') || el.textContent || '';
+        // Extract numeric portion
+        const numMatch = raw.match(/[\d,.]+/);
+        if (!numMatch) return;
+        const numStr = numMatch[0].replace(/,/g, '');
+        const num = parseFloat(numStr);
+        if (isNaN(num) || num <= 0) return;
+        const prefix = raw.slice(0, raw.indexOf(numMatch[0]));
+        const suffix = raw.slice(raw.indexOf(numMatch[0]) + numMatch[0].length);
+        const isInt = !numStr.includes('.');
+        const counter = { val: 0 };
+        gsap.to(counter, {
+          val: num,
+          duration: 1.4,
+          ease: 'power2.out',
+          onUpdate: function() {
+            const v = isInt ? Math.round(counter.val) : counter.val.toFixed(1);
+            const formatted = isInt && v >= 1000 ? v.toLocaleString() : v;
+            el.textContent = prefix + formatted + suffix;
+          },
+          onComplete: function() { el.textContent = raw; }
+        });
+      });
+    }, 680);
 
     // V23 — Callout block reveal
     const calloutReveal = document.getElementById('copy-callout');
