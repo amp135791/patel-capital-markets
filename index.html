@@ -392,7 +392,7 @@ body.transitioning .cinema-bar {
   z-index: 2;
   pointer-events: none;
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(6rem, 18vw, 16rem);
+  font-size: clamp(5.5rem, 16vw, 18rem);
   font-weight: 300;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -509,6 +509,10 @@ body.transitioning .cinema-bar {
 }
 .hotpoint-label {
   position: absolute;
+  white-space: nowrap;
+  max-width: 180px;
+  white-space: normal;
+  word-wrap: break-word;
   left: 100%;
   top: 50%;
   transform: translateY(-50%);
@@ -856,6 +860,7 @@ body.transitioning .cinema-bar {
   border-bottom: 2px solid transparent;
   cursor: none;
   opacity: 0.65;
+  transition: color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   transition: opacity 0.3s var(--ease-soft),
               color 0.3s var(--ease-soft),
               border-color 0.3s var(--ease-soft),
@@ -2199,10 +2204,10 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(201,169,110,0.55); }
 .connector-stage:last-child .connector-line-vert { display: none; }
 .connector-stage-name {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 1.0rem;
-  letter-spacing: 0.14em;
-  color: var(--brass);
-  text-transform: uppercase;
+  font-size: 1.25rem;
+  letter-spacing: 0.12em;
+  color: rgba(232,220,196,0.85);
+  font-style: italic;
   margin-bottom: 3px;
   line-height: 1.2;
 }
@@ -2928,6 +2933,7 @@ body.is-dragging #canvas-host canvas { cursor: grabbing; }
   overflow: visible;
   background: transparent;
   border: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 @media (hover: hover) {
   #btn-menu:hover .pcm-ring-1 { animation-duration: 2.4s; }
@@ -3997,8 +4003,8 @@ textarea:focus-visible {
 }
 .exec-stages-title {
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.35em;
+  font-size: 8px;
+  letter-spacing: 0.38em;
   color: rgba(201,169,110,0.45);
   text-transform: uppercase;
   margin-bottom: 28px;
@@ -6899,7 +6905,9 @@ window.updateCopyContent = updateCopyContent;
     insertHTML('afterbegin', `
       <div id="intro-loader" class="intro-loader" role="status" aria-live="polite" aria-label="Loading Patel Capital Markets">
         <div class="loader-inner">
-          <div class="intro-loader__wordmark-loader">Patel Capital Markets</div>
+          <div class="intro-loader__wordmark-loader" id="intro-wordmark">
+            <span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease,transform 0.35s ease">P</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.04s,transform 0.35s ease 0.04s">a</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.08s,transform 0.35s ease 0.08s">t</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.12s,transform 0.35s ease 0.12s">e</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.16s,transform 0.35s ease 0.16s">l</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.2s,transform 0.35s ease 0.2s">&nbsp;</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.24s,transform 0.35s ease 0.24s">C</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.28s,transform 0.35s ease 0.28s">a</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.32s,transform 0.35s ease 0.32s">p</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.36s,transform 0.35s ease 0.36s">i</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.4s,transform 0.35s ease 0.4s">t</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.44s,transform 0.35s ease 0.44s">a</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.48s,transform 0.35s ease 0.48s">l</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.52s,transform 0.35s ease 0.52s">&nbsp;</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.56s,transform 0.35s ease 0.56s">M</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.6s,transform 0.35s ease 0.6s">a</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.64s,transform 0.35s ease 0.64s">r</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.68s,transform 0.35s ease 0.68s">k</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.72s,transform 0.35s ease 0.72s">e</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.76s,transform 0.35s ease 0.76s">t</span><span class="intro-wm-char" style="opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 0.35s ease 0.8s,transform 0.35s ease 0.8s">s</span>
+          </div>
           <div class="intro-loader__hairline" aria-hidden="true"></div>
           <div class="loader-status intro-loader__text" id="loader-status">Initializing scene...</div>
           <div class="intro-loader__bar-wrap" aria-hidden="true">
@@ -6909,6 +6917,15 @@ window.updateCopyContent = updateCopyContent;
         </div>
       </div>
     `);
+
+    // Intro wordmark — reveal characters
+    setTimeout(function() {
+      const chars = document.querySelectorAll('.intro-wm-char');
+      chars.forEach(function(ch) {
+        ch.style.opacity = '1';
+        ch.style.transform = 'translateY(0)';
+      });
+    }, 120);
 
     // Loader percentage animation
     const loaderBar = document.getElementById('loader-bar');
@@ -8570,6 +8587,10 @@ function initOverlays() {
         </div>
       </div>
     </div>
+    <div class="menu-footer-brand" style="position:absolute;bottom:28px;left:44px;right:44px;border-top:1px solid rgba(201,169,110,0.1);padding-top:16px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:rgba(201,169,110,0.38);letter-spacing:0.22em;text-transform:uppercase;">Patel Capital Markets</div>
+      <div style="font-family:'Space Mono',monospace;font-size:7.5px;color:rgba(201,169,110,0.2);letter-spacing:0.22em;margin-top:5px;">Engineering Creative Finance · Control The Leverage</div>
+    </div>
 </div>`;
   document.body.appendChild(menuOverlay.firstElementChild);
 
@@ -9376,6 +9397,23 @@ function goToSection(idx, dir) {
   // Cinema bars
   document.body.classList.add('transitioning');
   setTimeout(() => document.body.classList.remove('transitioning'), 800);
+
+  // MaskLayer reveal (wipe effect)
+  const maskEl = document.getElementById('mask-layer');
+  if (maskEl) {
+    // Forward: wipe from bottom; backward: wipe from top
+    maskEl.style.clipPath = dir > 0 ? 'inset(100% 0 0% 0)' : 'inset(0% 0 100% 0)';
+    maskEl.style.transition = 'none';
+    // Force reflow
+    void maskEl.offsetWidth;
+    maskEl.style.transition = 'clip-path 0.55s cubic-bezier(0.77, 0, 0.18, 1)';
+    maskEl.style.clipPath = 'inset(0 0 0% 0)';
+    // Clear after transition
+    setTimeout(function() {
+      maskEl.style.transition = 'clip-path 0.45s cubic-bezier(0.77, 0, 0.18, 1)';
+      maskEl.style.clipPath = dir > 0 ? 'inset(0 0 100% 0)' : 'inset(100% 0 0% 0)';
+    }, 700);
+  }
 
   // Flash — direction-aware color
   const flash = document.getElementById('flash-overlay');
