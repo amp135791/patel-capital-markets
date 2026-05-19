@@ -386,6 +386,7 @@ body.transitioning .cinema-bar {
   left: 50%;
   top: 50%;
   transform: translateX(-50%) translateY(-50%);
+  animation: backdropFloat 8s ease-in-out infinite;
   z-index: 2;
   pointer-events: none;
   font-family: 'Cormorant Garamond', serif;
@@ -401,6 +402,12 @@ body.transitioning .cinema-bar {
 }
 .section-title-backdrop.hidden { opacity: 0; }
 .section-title-backdrop.visible { opacity: 1; }
+@keyframes backdropFloat {
+  0%   { transform: translateX(-50%) translateY(-50%) rotate(-0.3deg); }
+  33%  { transform: translateX(-50%) translateY(-51.5%) rotate(0.3deg); }
+  66%  { transform: translateX(-50%) translateY(-49%) rotate(-0.2deg); }
+  100% { transform: translateX(-50%) translateY(-50%) rotate(-0.3deg); }
+}
 /* ── CHAINED VIDEO STUB (atmospheric SVG animation) ─────────────────── */
 .chained-video-stub {
   position: fixed;
@@ -600,8 +607,8 @@ body.transitioning .cinema-bar {
    ------------------------------------------------------------ */
 .scene-copy .body-text {
   font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.7;
+  font-size: 15.5px;
+  line-height: 1.72;
   color: var(--ink);
   max-width: 540px;
   margin: 0 auto;
@@ -621,9 +628,10 @@ body.transitioning .cinema-bar {
 
 .scene-copy .stat-row .stat-number {
   font-family: var(--font-mono);
-  font-size: 22px;
+  font-size: 24px;
   color: var(--brass);
   line-height: 1;
+  text-shadow: 0 0 18px rgba(201,169,110,0.2);
 }
 
 .scene-copy .stat-row .stat-label {
@@ -1934,9 +1942,9 @@ body.transitioning .cinema-bar {
   background: transparent;
   border: none;
   border-bottom: 1px solid rgba(201, 169, 110, 0.2);
-  color: rgba(232,220,196,0.5);
+  color: rgba(232,220,196,0.55);
   font-family: 'Space Mono', monospace;
-  font-size: 9.5px;
+  font-size: 10px;
   letter-spacing: 0.2em;
   padding: 6px 10px 8px;
   cursor: pointer;
@@ -2351,6 +2359,14 @@ select.pcm-input option {
   margin-top: 4px;
 }
 
+.home-mark .brass-hairline {
+  animation: hairlineGrow 1.2s var(--ease-cinema) both;
+}
+@keyframes hairlineGrow {
+  from { transform: scaleX(0); transform-origin: left center; }
+  to   { transform: scaleX(1); transform-origin: left center; }
+}
+/* The rule below (duplicated base) is intentionally kept for specificity: */
 .home-mark .brass-hairline {
   width: 100%;
   height: 1px;
@@ -3081,8 +3097,8 @@ body.is-dragging #canvas-host canvas { cursor: grabbing; }
 }
 .substep-nav.visible { display: flex; }
 .substep-dash {
-  width: 32px;
-  height: 2px;
+  width: 34px;
+  height: 2.5px;
   background: rgba(201,169,110,0.18);
   border-radius: 1px;
   cursor: pointer;
@@ -6056,6 +6072,99 @@ function updateCopyContent(idx) {
       }
     }
   }
+
+  // Compliance Shield Visual (section 8)
+    if (idx === 8) {
+      const existingShield = copyEl.querySelector('.compliance-visual');
+      if (!existingShield) {
+        const cv = document.createElement('div');
+        cv.className = 'compliance-visual';
+        cv.style.cssText = 'margin:24px auto 0;max-width:380px;opacity:0;transition:opacity 0.9s ease 0.3s';
+        const badges = ['KYC', 'AML', 'SOC 2', 'FINRA'];
+        let badgeHTML = '';
+        badges.forEach(function(t, i) {
+          const x = 60 + i * 68;
+          badgeHTML += '<rect x="' + (x-24) + '" y="60" width="48" height="20" rx="3" fill="none" stroke="rgba(201,169,110,0.22)" stroke-width="0.7"/>';
+          badgeHTML += '<text x="' + x + '" y="73" font-family="Space Mono" font-size="8" fill="rgba(201,169,110,0.58)" text-anchor="middle">' + t + '</text>';
+        });
+        cv.innerHTML = '<svg viewBox="0 0 380 130" width="100%" height="auto" style="display:block">'
+          + '<path d="M 40,18 L 190,8 L 340,18 L 340,75 Q 300,120 190,132 Q 80,120 40,75 Z" fill="rgba(201,169,110,0.03)" stroke="rgba(201,169,110,0.2)" stroke-width="0.9"/>'
+          + '<path d="M 60,26 L 190,18 L 320,26 L 320,74 Q 285,112 190,122 Q 95,112 60,74 Z" fill="none" stroke="rgba(201,169,110,0.12)" stroke-width="0.6"/>'
+          + '<text x="190" y="50" font-family="Cormorant Garamond" font-size="13" fill="rgba(201,169,110,0.65)" text-anchor="middle" letter-spacing="0.12em">INSTITUTIONAL BY DESIGN</text>'
+          + '<line x1="80" y1="57" x2="300" y2="57" stroke="rgba(201,169,110,0.15)" stroke-width="0.5"/>'
+          + badgeHTML
+          + '<text x="190" y="105" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,0.35)" text-anchor="middle" letter-spacing="0.18em">SERIES 79 · SOC 2 TYPE II CERTIFIED</text>'
+          + '</svg>';
+        const bodyEl = copyEl.querySelector('.body-text');
+        if (bodyEl) bodyEl.after(cv);
+        else copyEl.appendChild(cv);
+        setTimeout(function() { cv.style.opacity = '1'; }, 300);
+      }
+    }
+
+    // Senior Debt mode table (section 3)
+    if (idx === 3) {
+      const existingTable = copyEl.querySelector('.sd-mode-table');
+      if (!existingTable) {
+        const tbl = document.createElement('div');
+        tbl.className = 'sd-mode-table';
+        tbl.style.cssText = 'margin:18px auto 0;max-width:520px;opacity:0;transition:opacity 0.8s ease 0.25s';
+        const rows = [
+          ['ACQUISITION',  '$15M–$500M', 'SOFR+175–275', '6–10 wk'],
+          ['REFINANCE',    '$15M–$300M', 'SOFR+150–250', '5–8 wk'],
+          ['BRIDGE',       '$10M–$200M', 'SOFR+275–450', '3–5 wk'],
+          ['CONSTRUCTION', '$20M–$250M', 'SOFR+300–500', '18–48 mo'],
+        ];
+        const makeRow = function(r) {
+          return '<tr>'
+            + '<td style="padding:7px 10px;font-family:Space Mono,monospace;font-size:8px;letter-spacing:0.14em;color:rgba(201,169,110,0.6);border-bottom:1px solid rgba(201,169,110,0.07)">' + r[0] + '</td>'
+            + '<td style="padding:7px 10px;font-family:Space Mono,monospace;font-size:8.5px;color:rgba(227,238,230,0.7);border-bottom:1px solid rgba(201,169,110,0.07)">' + r[1] + '</td>'
+            + '<td style="padding:7px 10px;font-family:Space Mono,monospace;font-size:8.5px;color:rgba(227,238,230,0.5);border-bottom:1px solid rgba(201,169,110,0.07)">' + r[2] + '</td>'
+            + '<td style="padding:7px 10px;font-family:Space Mono,monospace;font-size:8.5px;color:rgba(201,169,110,0.5);border-bottom:1px solid rgba(201,169,110,0.07)">' + r[3] + '</td>'
+            + '</tr>';
+        };
+        tbl.innerHTML = '<table style="width:100%;border-collapse:collapse">'
+          + '<thead><tr>'
+          + ['TYPE','SIZE','SPREAD','TIMELINE'].map(function(h) {
+              return '<th style="padding:4px 10px 8px;font-family:Space Mono,monospace;font-size:7px;letter-spacing:0.2em;color:rgba(201,169,110,0.38);text-align:left;font-weight:400;border-bottom:1px solid rgba(201,169,110,0.18)">' + h + '</th>';
+            }).join('')
+          + '</tr></thead><tbody>' + rows.map(makeRow).join('') + '</tbody></table>';
+        const modesRow = copyEl.querySelector('.modes-row');
+        if (modesRow) modesRow.after(tbl);
+        else copyEl.appendChild(tbl);
+        setTimeout(function() { tbl.style.opacity = '1'; }, 300);
+      }
+    }
+
+    // Firm Overview founding timeline (section 1)
+    if (idx === 1) {
+      const existingFirmViz = copyEl.querySelector('.firm-visual');
+      if (!existingFirmViz) {
+        const fv = document.createElement('div');
+        fv.className = 'firm-visual';
+        fv.style.cssText = 'margin:20px auto 0;max-width:440px;opacity:0;transition:opacity 0.9s ease 0.4s';
+        const years = [2019, 2020, 2021, 2022, 2023, 2024, 2025];
+        let dotHTML = '';
+        years.forEach(function(yr, i) {
+          const x = 20 + i * (400/6);
+          const isFounded = i === 0;
+          dotHTML += '<circle cx="' + x.toFixed(0) + '" cy="35" r="' + (isFounded ? 4.5 : 2.5) + '" fill="' + (isFounded ? '#C9A96E' : 'rgba(201,169,110,0.3)') + '"/>';
+          dotHTML += '<text x="' + x.toFixed(0) + '" y="52" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,' + (isFounded ? '0.55' : '0.28') + ')" text-anchor="middle">' + yr + '</text>';
+        });
+        fv.innerHTML = '<svg viewBox="0 0 440 62" width="100%" height="auto" style="display:block">'
+          + '<line x1="20" y1="35" x2="420" y2="35" stroke="rgba(201,169,110,0.2)" stroke-width="1"/>'
+          + dotHTML
+          + '<text x="20" y="18" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,0.45)" letter-spacing="0.2em">FOUNDED</text>'
+          + '<text x="420" y="18" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,0.32)" text-anchor="end" letter-spacing="0.12em">18 PROFESSIONALS</text>'
+          + '</svg>';
+        const calloutEl = copyEl.querySelector('#copy-callout');
+        const statsEl = copyEl.querySelector('.stat-row');
+        const anchorEl = calloutEl || statsEl;
+        if (anchorEl) anchorEl.after(fv);
+        else copyEl.appendChild(fv);
+        setTimeout(function() { fv.style.opacity = '1'; }, 300);
+      }
+    }
 
   // Connector stages (Execution section 6)
   let connectorEl = document.getElementById('copy-connector');
@@ -10612,6 +10721,29 @@ window.audioEngine = audioEngine;
 
 /* Toggle button */
 document.getElementById('btn-audio')?.addEventListener('click', () => audioEngine.toggle());
+
+/* Auto-enable audio on first meaningful user interaction (scroll / click / key) */
+(function() {
+  let audioStarted = false;
+  function startAudioOnce() {
+    if (audioStarted) return;
+    audioStarted = true;
+    // Only auto-start if user hasn't explicitly muted
+    const btn = document.getElementById('btn-audio');
+    if (btn && !btn.classList.contains('muted')) {
+      audioEngine.enable();
+      btn.setAttribute('aria-pressed', 'false');
+    }
+    window.removeEventListener('click', startAudioOnce, true);
+    window.removeEventListener('keydown', startAudioOnce, true);
+    window.removeEventListener('wheel', startAudioOnce, true);
+    window.removeEventListener('touchstart', startAudioOnce, true);
+  }
+  window.addEventListener('click',      startAudioOnce, { once: true, capture: true });
+  window.addEventListener('keydown',    startAudioOnce, { once: true });
+  window.addEventListener('wheel',      startAudioOnce, { once: true });
+  window.addEventListener('touchstart', startAudioOnce, { once: true, passive: true });
+})();
 
 /* Section change hook — called by scroll observer in main.js */
 window.onSectionChange = function(idx) {
