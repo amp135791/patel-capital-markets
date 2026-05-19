@@ -401,6 +401,22 @@ body.transitioning .cinema-bar {
 }
 .section-title-backdrop.hidden { opacity: 0; }
 .section-title-backdrop.visible { opacity: 1; }
+/* ── CHAINED VIDEO STUB (atmospheric SVG animation) ─────────────────── */
+.chained-video-stub {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  overflow: hidden;
+}
+.chained-video-stub.visible { opacity: 1; }
+.cvs-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+}
 /* ── LIFESTYLE GALLERY ───────────────────────────────────────────────── */
 .lifestyle-gallery {
   position: relative;
@@ -4818,6 +4834,14 @@ textarea.engage-input-v2 { resize: none; line-height: 1.6; }
 .geo-accent.visible {
   opacity: 1;
 }
+#geo-accent-group {
+  transform-origin: 50% 50%;
+  animation: geoSpin 60s linear infinite;
+}
+@keyframes geoSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
   </style>
 </head>
 <body class="pcm-body">
@@ -4836,48 +4860,176 @@ textarea.engage-input-v2 { resize: none; line-height: 1.6; }
     // 4: Sub Cap  — diagonal lines (bottom-right)
     // 5: Equity   — radial lines (top-left)
     var GEO_PATTERNS = {
+      // 0: Home — concentric rings top-right (brass orbital resonance)
       0: {
         pos: { right:'0', top:'0', left:'', bottom:'' }, opacity: 0.10,
         render: function() {
           var s = '';
-          for (var r = 20; r <= 140; r += 24) {
-            s += '<circle cx="300" cy="0" r="' + r + '" fill="none" stroke="#C9A96E" stroke-width="0.8"/>';
+          for (var r = 20; r <= 180; r += 22) {
+            var op = (0.5 - r/400).toFixed(2);
+            s += '<circle cx="300" cy="0" r="' + r + '" fill="none" stroke="#C9A96E" stroke-width="0.8" opacity="' + op + '"/>';
           }
           return s;
         }
       },
-      3: {
-        pos: { left:'0', top:'0', right:'', bottom:'' }, opacity: 0.08,
+      // 1: Firm Overview — diagonal cross-hatch bottom-left
+      1: {
+        pos: { left:'0', bottom:'0', right:'', top:'' }, opacity: 0.07,
         render: function() {
           var s = '';
-          for (var row = 0; row < 7; row++) {
-            for (var col = 0; col < 7; col++) {
-              s += '<circle cx="' + (20 + col*30) + '" cy="' + (20 + row*30) + '" r="2" fill="#C9A96E"/>';
+          for (var i = -4; i < 14; i++) {
+            var o = i * 22;
+            s += '<line x1="' + o + '" y1="0" x2="' + (o + 220) + '" y2="220" stroke="#C9A96E" stroke-width="0.6"/>';
+            s += '<line x1="' + (o + 220) + '" y1="0" x2="' + o + '" y2="220" stroke="#C9A96E" stroke-width="0.6"/>';
+          }
+          return s;
+        }
+      },
+      // 2: Platform Edge — hex grid top-right
+      2: {
+        pos: { right:'0', top:'0', left:'', bottom:'' }, opacity: 0.08,
+        render: function() {
+          var s = '';
+          var pi = Math.PI;
+          function hex(cx, cy, r) {
+            var pts = [];
+            for (var a = 0; a < 6; a++) {
+              var ang = (pi / 3) * a - pi / 6;
+              pts.push((cx + r * Math.cos(ang)).toFixed(1) + ',' + (cy + r * Math.sin(ang)).toFixed(1));
+            }
+            return '<polygon points="' + pts.join(' ') + '" fill="none" stroke="#C9A96E" stroke-width="0.6"/>';
+          }
+          var rows = 5, cols = 5, r = 22;
+          for (var row = 0; row < rows; row++) {
+            for (var col = 0; col < cols; col++) {
+              var cx = 20 + col * (r * 1.73);
+              var cy = 20 + row * (r * 2) + (col % 2) * r;
+              s += hex(cx, cy, r);
             }
           }
           return s;
         }
       },
-      4: {
-        pos: { right:'0', bottom:'0', left:'', top:'' }, opacity: 0.09,
+      // 3: Senior Debt — dot grid top-left (existing, enhanced)
+      3: {
+        pos: { left:'0', top:'0', right:'', bottom:'' }, opacity: 0.08,
         render: function() {
           var s = '';
-          for (var i = 0; i < 12; i++) {
-            var offset = i * 22;
-            s += '<line x1="' + (offset - 20) + '" y1="300" x2="' + (offset + 130) + '" y2="0" stroke="#C9A96E" stroke-width="0.7"/>';
+          for (var row = 0; row < 8; row++) {
+            for (var col = 0; col < 8; col++) {
+              var op = (1 - (row + col) / 16).toFixed(2);
+              s += '<circle cx="' + (16 + col*28) + '" cy="' + (16 + row*28) + '" r="' + (row === 0 && col === 0 ? 3.5 : 2) + '" fill="#C9A96E" opacity="' + op + '"/>';
+            }
           }
           return s;
         }
       },
+      // 4: Sub Capital — diagonal lines bottom-right (existing, enhanced)
+      4: {
+        pos: { right:'0', bottom:'0', left:'', top:'' }, opacity: 0.09,
+        render: function() {
+          var s = '';
+          for (var i = 0; i < 14; i++) {
+            var offset = i * 22;
+            var op = (0.8 - i * 0.04).toFixed(2);
+            s += '<line x1="' + (offset - 20) + '" y1="300" x2="' + (offset + 130) + '" y2="0" stroke="#C9A96E" stroke-width="0.7" opacity="' + op + '"/>';
+          }
+          return s;
+        }
+      },
+      // 5: Equity — radial spokes top-left (existing, enhanced)
       5: {
         pos: { left:'0', top:'0', right:'', bottom:'' }, opacity: 0.12,
         render: function() {
           var s = '';
           var pi = Math.PI;
-          for (var a = 0; a < 360; a += 18) {
+          // Outer full-opacity ring
+          s += '<circle cx="0" cy="0" r="180" fill="none" stroke="#C9A96E" stroke-width="0.5" opacity="0.2"/>';
+          for (var a = 0; a < 360; a += 15) {
             var rad = a * pi / 180;
-            s += '<line x1="0" y1="0" x2="' + (200*Math.cos(rad)).toFixed(1) + '" y2="' + (200*Math.sin(rad)).toFixed(1) + '" stroke="#C9A96E" stroke-width="0.6"/>';
+            var r1 = 30, r2 = 200;
+            s += '<line x1="' + (r1*Math.cos(rad)).toFixed(1) + '" y1="' + (r1*Math.sin(rad)).toFixed(1) + '" x2="' + (r2*Math.cos(rad)).toFixed(1) + '" y2="' + (r2*Math.sin(rad)).toFixed(1) + '" stroke="#C9A96E" stroke-width="0.6"/>';
           }
+          return s;
+        }
+      },
+      // 6: Execution — flowing wave / process dots bottom-left
+      6: {
+        pos: { left:'0', bottom:'0', right:'', top:'' }, opacity: 0.09,
+        render: function() {
+          var s = '';
+          var pi = Math.PI;
+          for (var wave = 0; wave < 5; wave++) {
+            var points = '';
+            for (var x = 0; x <= 260; x += 8) {
+              var y = 80 + wave * 18 + Math.sin(x / 36 + wave * 0.8) * 12;
+              points += x + ',' + y.toFixed(1) + ' ';
+            }
+            s += '<polyline points="' + points.trim() + '" fill="none" stroke="#C9A96E" stroke-width="0.6" opacity="' + (0.5 - wave * 0.08).toFixed(2) + '"/>';
+          }
+          // Stage dots
+          for (var d = 0; d < 5; d++) {
+            s += '<circle cx="' + (30 + d * 50) + '" cy="' + (40 + Math.sin(d * 1.2) * 8) + '" r="3.5" fill="none" stroke="#C9A96E" stroke-width="1" opacity="0.6"/>';
+          }
+          return s;
+        }
+      },
+      // 7: Underwriting — grid / data visualization top-right
+      7: {
+        pos: { right:'0', top:'0', left:'', bottom:'' }, opacity: 0.10,
+        render: function() {
+          var s = '';
+          // Grid lines
+          for (var gx = 0; gx < 260; gx += 26) {
+            s += '<line x1="' + gx + '" y1="0" x2="' + gx + '" y2="260" stroke="#C9A96E" stroke-width="0.4" opacity="0.3"/>';
+          }
+          for (var gy = 0; gy < 260; gy += 26) {
+            s += '<line x1="0" y1="' + gy + '" x2="260" y2="' + gy + '" stroke="#C9A96E" stroke-width="0.4" opacity="0.3"/>';
+          }
+          // Stress curve (parabolic arc)
+          var pts = '';
+          for (var xi = 0; xi <= 250; xi += 5) {
+            var yi = 240 - (xi / 250) * (xi / 250) * 220;
+            pts += xi + ',' + yi.toFixed(1) + ' ';
+          }
+          s += '<polyline points="' + pts.trim() + '" fill="none" stroke="#C9A96E" stroke-width="1.2" opacity="0.8"/>';
+          // Threshold line
+          s += '<line x1="0" y1="140" x2="260" y2="140" stroke="#C9A96E" stroke-width="0.7" stroke-dasharray="6 4" opacity="0.5"/>';
+          s += '<text x="4" y="134" font-family="Space Mono" font-size="8" fill="#C9A96E" opacity="0.6">1.20×</text>';
+          return s;
+        }
+      },
+      // 8: Compliance — institutional seal / concentric squares bottom-right
+      8: {
+        pos: { right:'0', bottom:'0', left:'', top:'' }, opacity: 0.09,
+        render: function() {
+          var s = '';
+          // Concentric squares
+          for (var sq = 0; sq < 6; sq++) {
+            var size = 40 + sq * 30;
+            var x = 260 - size; var y = 260 - size;
+            s += '<rect x="' + x + '" y="' + y + '" width="' + size + '" height="' + size + '" fill="none" stroke="#C9A96E" stroke-width="0.6" opacity="' + (0.6 - sq * 0.08).toFixed(2) + '"/>';
+          }
+          // Shield outline in center of squares
+          s += '<path d="M 220,160 L 260,180 L 260,240 Q 240,260 220,260 Q 200,260 180,240 L 180,180 Z" fill="none" stroke="#C9A96E" stroke-width="0.8" opacity="0.5"/>';
+          return s;
+        }
+      },
+      // 9: Engage — radiating signal / broadcast top-left
+      9: {
+        pos: { left:'0', top:'0', right:'', bottom:'' }, opacity: 0.11,
+        render: function() {
+          var s = '';
+          var pi = Math.PI;
+          var cx = 0, cy = 0;
+          // Radiating arcs
+          for (var arc = 1; arc <= 6; arc++) {
+            var r = arc * 30;
+            var op = (0.7 - arc * 0.08).toFixed(2);
+            s += '<path d="M ' + (cx + r * Math.cos(pi * 0.1)).toFixed(1) + ',' + (cy + r * Math.sin(pi * 0.1)).toFixed(1) + ' A ' + r + ',' + r + ' 0 0 1 ' + (cx + r * Math.cos(pi * 0.9)).toFixed(1) + ',' + (cy + r * Math.sin(pi * 0.9)).toFixed(1) + '" fill="none" stroke="#C9A96E" stroke-width="0.7" opacity="' + op + '"/>';
+          }
+          // Signal dot
+          s += '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#C9A96E" opacity="0.7"/>';
           return s;
         }
       }
@@ -5814,6 +5966,43 @@ function updateCopyContent(idx) {
     const modeBodyEl = document.getElementById('mode-body');
     if (modeBodyEl && idx !== 2) modeBodyEl.style.display = '';
   }
+
+  // Data-Viz visual for Underwriting (section 7)
+    if (idx === 7) {
+      const existingViz = copyEl.querySelector('.uw-dataviz');
+      if (!existingViz) {
+        const viz = document.createElement('div');
+        viz.className = 'uw-dataviz';
+        viz.style.cssText = 'margin:20px auto 0;max-width:480px;opacity:0;transition:opacity 0.8s ease 0.3s';
+        const scenarios = [
+          {label:'BASE',  pct:0.88, dscr:'1.42×'},
+          {label:'STRESS',pct:0.60, dscr:'1.20×'},
+          {label:'SEVERE',pct:0.32, dscr:'0.96×'},
+          {label:'TAIL',  pct:0.12, dscr:'0.72×'}
+        ];
+        let barsHTML = '';
+        scenarios.forEach(function(s, i) {
+          const w = Math.round(s.pct * 340);
+          const op  = s.pct > 0.55 ? '0.22' : '0.10';
+          const top = s.pct > 0.55 ? '0.7'  : '0.3';
+          const y   = 28 + i * 22;
+          barsHTML += '<text x="0" y="' + y + '" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,0.4)">' + s.label + '</text>';
+          barsHTML += '<rect x="52" y="' + (19 + i*22) + '" width="' + w + '" height="10" rx="2" fill="rgba(201,169,110,' + op + ')"/>';
+          barsHTML += '<text x="' + (52 + w + 6) + '" y="' + y + '" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,' + top + ')">' + s.dscr + '</text>';
+        });
+        const threshX = 52 + Math.round(0.60 * 340);
+        viz.innerHTML = '<svg viewBox="0 0 480 120" width="100%" height="auto" style="display:block">'
+          + '<text x="0" y="12" font-family="Space Mono" font-size="8" fill="rgba(201,169,110,0.5)" letter-spacing="0.2em">SENSITIVITY SCENARIOS</text>'
+          + barsHTML
+          + '<line x1="' + threshX + '" y1="14" x2="' + threshX + '" y2="108" stroke="rgba(201,169,110,0.3)" stroke-width="0.8" stroke-dasharray="3 3"/>'
+          + '<text x="' + threshX + '" y="116" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,0.4)" text-anchor="middle">1.20× MIN</text>'
+          + '</svg>';
+        const bodyEl = copyEl.querySelector('.body-text');
+        if (bodyEl) bodyEl.after(viz);
+        else copyEl.appendChild(viz);
+        setTimeout(function() { viz.style.opacity = '1'; }, 300);
+      }
+    }
 
   // LifestyleGallery for Equity (section 5)
   if (idx === 5) {
@@ -8728,7 +8917,7 @@ let scrollAccum = 0;
 let lastScrollTime = 0;
 let isTransitioning = false;
 let introT = 0;
-const INTRO_DUR = 2.5;
+const INTRO_DUR = 1.8;  // Faster reveal (was 2.5s) — seacat feel
 let introComplete = false;
 let prevTime = performance.now();
 const TRANS_DUR = 1.6;
@@ -10543,6 +10732,108 @@ window.addEventListener('keydown', e => {
   } else {
     setTimeout(showTicker, 3500);
   }
+})();
+
+// ─── CHAINED VIDEO STUBS ─────────────────────────────────────────────────────
+// Per-section atmospheric canvas animations (stub until video assets are ready)
+(function buildChainedVideoStubs() {
+  const host = document.createElement('div');
+  host.className = 'chained-video-stub';
+  host.id = 'chained-video-stub';
+  const canvas = document.createElement('canvas');
+  canvas.className = 'cvs-canvas';
+  canvas.id = 'cvs-canvas';
+  host.appendChild(canvas);
+  document.body.appendChild(host);
+
+  const ctx = canvas.getContext('2d');
+  let animFrame = null;
+  let currentSection = -1;
+  let stubT = 0;
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Per-section draw functions — each is a minimal atmospheric animation
+  const DRAWFNS = {
+    // Section 0: Home — flowing particle field (ambient)
+    0: function(t, W, H, c) {
+      // Show nothing — let the 3D logo dominate
+      c.clearRect(0, 0, W, H);
+    },
+    // Section 1: Firm — slow diagonal light bars
+    1: function(t, W, H, c) {
+      c.clearRect(0, 0, W, H);
+      const grad = c.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, 'rgba(6,9,10,0)');
+      grad.addColorStop(0.5, 'rgba(26,37,32,0.03)');
+      grad.addColorStop(1, 'rgba(6,9,10,0)');
+      for (let i = 0; i < 3; i++) {
+        const x = ((t * 0.04 + i * 0.33) % 1) * (W + 300) - 150;
+        const bar = c.createLinearGradient(x - 80, 0, x + 80, 0);
+        bar.addColorStop(0, 'rgba(201,169,110,0)');
+        bar.addColorStop(0.5, 'rgba(201,169,110,0.018)');
+        bar.addColorStop(1, 'rgba(201,169,110,0)');
+        c.save();
+        c.translate(x, H/2);
+        c.rotate(-0.4);
+        c.fillStyle = bar;
+        c.fillRect(-80, -H, 160, H * 2);
+        c.restore();
+      }
+    },
+    // Section 6: Execution — moving horizontal scan line
+    6: function(t, W, H, c) {
+      c.clearRect(0, 0, W, H);
+      const y = (Math.sin(t * 0.3) * 0.5 + 0.5) * H;
+      const line = c.createLinearGradient(0, y - 2, 0, y + 2);
+      line.addColorStop(0, 'rgba(201,169,110,0)');
+      line.addColorStop(0.5, 'rgba(201,169,110,0.04)');
+      line.addColorStop(1, 'rgba(201,169,110,0)');
+      c.fillStyle = line;
+      c.fillRect(0, y - 2, W, 4);
+    },
+    // Section 9: Engage — subtle radial pulse from center
+    9: function(t, W, H, c) {
+      c.clearRect(0, 0, W, H);
+      for (let ring = 0; ring < 3; ring++) {
+        const phase = (t * 0.25 + ring * 0.33) % 1;
+        const r = phase * Math.min(W, H) * 0.6;
+        const alpha = (1 - phase) * 0.03;
+        c.beginPath();
+        c.arc(W/2, H/2, r, 0, Math.PI * 2);
+        c.strokeStyle = `rgba(201,169,110,${alpha.toFixed(3)})`;
+        c.lineWidth = 1;
+        c.stroke();
+      }
+    }
+  };
+
+  function tick(timestamp) {
+    animFrame = requestAnimationFrame(tick);
+    stubT = timestamp / 1000;
+    const W = canvas.width, H = canvas.height;
+    const fn = DRAWFNS[currentSection];
+    if (fn) fn(stubT, W, H, ctx);
+    else ctx.clearRect(0, 0, W, H);
+  }
+
+  // Start the loop
+  animFrame = requestAnimationFrame(tick);
+
+  // Hook into section changes
+  const origOnChange = window.onSectionChange;
+  window.onSectionChange = function(idx, dir) {
+    currentSection = idx;
+    // Only show stub for sections with a draw function
+    const stub = document.getElementById('chained-video-stub');
+    if (stub) stub.classList.toggle('visible', DRAWFNS[idx] !== undefined && idx !== 0);
+    if (origOnChange) origOnChange(idx, dir);
+  };
 })();
 
 // ─── HOTPOINTS ────────────────────────────────────────────────────────────────
