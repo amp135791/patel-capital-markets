@@ -249,6 +249,15 @@ video {
 }
 
 /* ------------------------------------------------------------
+   4b. CUSTOM SCROLLBAR
+   ------------------------------------------------------------ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: rgba(6,9,10,0.5); }
+::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.22); border-radius: 2px; transition: background 0.3s; }
+::-webkit-scrollbar-thumb:hover { background: rgba(201,169,110,0.42); }
+* { scrollbar-width: thin; scrollbar-color: rgba(201,169,110,0.22) rgba(6,9,10,0.4); }
+
+/* ------------------------------------------------------------
    5. CINEMA BARS
    ------------------------------------------------------------ */
 .cinema-bar {
@@ -502,6 +511,19 @@ body.transitioning .cinema-bar {
   box-shadow: 0 0 0 0 rgba(201,169,110,0.4);
   animation: hotpointPulse 2.4s ease-out infinite;
 }
+.hotpoint-dot::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,169,110,0.28);
+  animation: dotRingPulse 2.8s ease-in-out infinite;
+}
+@keyframes dotRingPulse {
+  0%   { transform: scale(1);   opacity: 0.6; }
+  55%  { transform: scale(2.0); opacity: 0; }
+  100% { transform: scale(1);   opacity: 0.6; }
+}
 @keyframes hotpointPulse {
   0%   { box-shadow: 0 0 0 0 rgba(201,169,110,0.4); }
   70%  { box-shadow: 0 0 0 12px rgba(201,169,110,0); }
@@ -586,6 +608,12 @@ body.transitioning .cinema-bar {
   text-transform: uppercase;
   display: block;
   margin-bottom: 14px;
+  overflow: hidden;
+  clip-path: inset(0 105% 0 0);
+  transition: clip-path 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0.12s;
+}
+.scene-copy.visible .pre-title {
+  clip-path: inset(0 0% 0 0);
 }
 
 /* ------------------------------------------------------------
@@ -593,11 +621,28 @@ body.transitioning .cinema-bar {
    ------------------------------------------------------------ */
 .scene-copy .main-title {
   font-family: var(--font-serif);
-  font-size: clamp(2.8rem, 5vw, 5.5rem);
+  font-size: clamp(2.8rem, 5vw, 5.6rem);
   font-weight: 500;
   color: var(--ink);
   letter-spacing: 0.18em;
   line-height: 1.1;
+  position: relative;
+}
+.scene-copy.visible .main-title::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 1px;
+  background: var(--brass);
+  opacity: 0.35;
+  width: 0;
+  animation: titleUnderline 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.7s forwards;
+}
+@keyframes titleUnderline {
+  from { width: 0; }
+  to   { width: 56px; }
 }
 
 /* ─── REVEAL TEXT (seacat-style line reveal) ─── */
@@ -893,7 +938,13 @@ body.transitioning .cinema-bar {
   color: var(--brass);
   opacity: 1;
   border-bottom: 2px solid var(--brass);
-  box-shadow: 0 0 12px rgba(201, 169, 110, 0.4);
+  box-shadow: 0 2px 16px rgba(201, 169, 110, 0.45), 0 0 24px rgba(201, 169, 110, 0.18);
+}
+.section-btn.active .btn-num {
+  color: rgba(201, 169, 110, 0.85);
+}
+.section-btn.active .btn-name {
+  letter-spacing: 0.12em;
 }
 
 .section-btn { position: relative; overflow: hidden; }
@@ -2311,8 +2362,14 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(201,169,110,0.6); }
 .poetic-line {
   display: block;
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translateY(10px);
+  transition: opacity 0.78s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.78s cubic-bezier(0.22, 1, 0.36, 1);
+  font-style: italic;
+  line-height: 1.85;
+  border-left: 1px solid rgba(201,169,110,0.14);
+  padding-left: 14px;
+  margin-bottom: 5px;
 }
 .poetic-line.revealed {
   opacity: 1;
@@ -2483,19 +2540,21 @@ select.pcm-input option {
 .btn-num {
   display: block;
   font-family: 'Space Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.22em;
-  color: rgba(201, 169, 110, 0.65);
-  margin-bottom: 3px;
+  font-size: 8.5px;
+  letter-spacing: 0.28em;
+  color: rgba(201, 169, 110, 0.55);
+  margin-bottom: 4px;
 }
 
 .btn-name {
   display: block;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 15px;
-  letter-spacing: 0.18em;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
   white-space: nowrap;
+  line-height: 1;
 }
 
 /* ─────────────────────────────────────────────
@@ -5716,12 +5775,16 @@ function buildPCMLogo(THREE) {
   // ── PARTICLES ──────────────────────────────────────────────────────────────
   const particleCount = 240;
   const positions = new Float32Array(particleCount * 3);
-  const phases = new Float32Array(particleCount);
+  const phases    = new Float32Array(particleCount);
+  const velocities = new Float32Array(particleCount * 3);  // persistent drift velocities
   for (let i = 0; i < particleCount; i++) {
     positions[i * 3]     = (Math.random() - 0.5) * 16;
     positions[i * 3 + 1] = (Math.random() - 0.5) * 12;
     positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
     phases[i] = Math.random() * Math.PI * 2;
+    velocities[i * 3]     = (Math.random() - 0.5) * 0.0006;
+    velocities[i * 3 + 1] = (Math.random() - 0.5) * 0.0004;
+    velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.0003;
   }
   const particleGeo = new THREE.BufferGeometry();
   particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -5731,10 +5794,36 @@ function buildPCMLogo(THREE) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     transparent: true,
-    opacity: 0.7
+    opacity: 0.72
   });
   const particles = new THREE.Points(particleGeo, particleMat);
   particles.userData.phases = phases;
+  particles.userData.velocities = velocities;
+
+  // Boss particles — 24 larger motes for depth layering
+  const bossCount = 24;
+  const bossPos  = new Float32Array(bossCount * 3);
+  const bossPhase = new Float32Array(bossCount);
+  for (let i = 0; i < bossCount; i++) {
+    bossPos[i * 3]     = (Math.random() - 0.5) * 20;
+    bossPos[i * 3 + 1] = (Math.random() - 0.5) * 14;
+    bossPos[i * 3 + 2] = (Math.random() - 0.5) * 8 - 2;
+    bossPhase[i] = Math.random() * Math.PI * 2;
+  }
+  const bossGeo = new THREE.BufferGeometry();
+  bossGeo.setAttribute('position', new THREE.BufferAttribute(bossPos, 3));
+  const bossMat = new THREE.PointsMaterial({
+    color: 0xd9b97a,
+    size: 0.13,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0.28
+  });
+  const bossParticles = new THREE.Points(bossGeo, bossMat);
+  bossParticles.userData.phases = bossPhase;
+  scene.add(bossParticles);
+  window.bossParticles = bossParticles;
 
   // ── BACKGROUND GRADIENT PLANE ──────────────────────────────────────────────
   const bgPlane = new THREE.Mesh(
@@ -6077,32 +6166,47 @@ function updateCopyContent(idx) {
         viz.className = 'uw-dataviz';
         viz.style.cssText = 'margin:20px auto 0;max-width:480px;opacity:0;transition:opacity 0.8s ease 0.3s';
         const scenarios = [
-          {label:'BASE',  pct:0.88, dscr:'1.42×'},
-          {label:'STRESS',pct:0.60, dscr:'1.20×'},
-          {label:'SEVERE',pct:0.32, dscr:'0.96×'},
-          {label:'TAIL',  pct:0.12, dscr:'0.72×'}
+          {label:'BASE',  pct:0.88, dscr:'1.42×', pass: true},
+          {label:'STRESS',pct:0.60, dscr:'1.20×', pass: true},
+          {label:'SEVERE',pct:0.32, dscr:'0.96×', pass: false},
+          {label:'TAIL',  pct:0.12, dscr:'0.72×', pass: false}
         ];
-        let barsHTML = '';
+        const maxW = 320;
+        const threshX = 52 + Math.round(0.60 * maxW);
+        // Build using HTML divs for CSS animation
+        let rowsHTML = '';
         scenarios.forEach(function(s, i) {
-          const w = Math.round(s.pct * 340);
-          const op  = s.pct > 0.55 ? '0.22' : '0.10';
-          const top = s.pct > 0.55 ? '0.7'  : '0.3';
-          const y   = 28 + i * 22;
-          barsHTML += '<text x="0" y="' + y + '" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,0.4)">' + s.label + '</text>';
-          barsHTML += '<rect x="52" y="' + (19 + i*22) + '" width="' + w + '" height="10" rx="2" fill="rgba(201,169,110,' + op + ')"/>';
-          barsHTML += '<text x="' + (52 + w + 6) + '" y="' + y + '" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,' + top + ')">' + s.dscr + '</text>';
+          const targetPct = Math.round(s.pct * 100);
+          const passColor = s.pass ? 'rgba(201,169,110,0.22)' : 'rgba(127,184,156,0.12)';
+          const labelColor = s.pass ? 'rgba(201,169,110,0.55)' : 'rgba(127,184,156,0.45)';
+          const delay = 0.45 + i * 0.18;
+          rowsHTML += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+            + '<span style="font-family:Space Mono,monospace;font-size:7.5px;letter-spacing:0.14em;color:rgba(201,169,110,0.42);width:44px;flex-shrink:0">' + s.label + '</span>'
+            + '<div style="flex:1;height:9px;background:rgba(201,169,110,0.05);border-radius:2px;overflow:hidden;position:relative">'
+            + '<div class="uw-bar-fill" style="height:100%;width:0%;background:' + passColor + ';border-radius:2px;transition:width 1.1s cubic-bezier(0.22,1,0.36,1) ' + delay + 's" data-target="' + targetPct + '"></div>'
+            + '</div>'
+            + '<span style="font-family:Space Mono,monospace;font-size:8px;color:' + labelColor + ';width:32px;text-align:right">' + s.dscr + '</span>'
+            + '</div>';
         });
-        const threshX = 52 + Math.round(0.60 * 340);
-        viz.innerHTML = '<svg viewBox="0 0 480 120" width="100%" height="auto" style="display:block">'
-          + '<text x="0" y="12" font-family="Space Mono" font-size="8" fill="rgba(201,169,110,0.5)" letter-spacing="0.2em">SENSITIVITY SCENARIOS</text>'
-          + barsHTML
-          + '<line x1="' + threshX + '" y1="14" x2="' + threshX + '" y2="108" stroke="rgba(201,169,110,0.3)" stroke-width="0.8" stroke-dasharray="3 3"/>'
-          + '<text x="' + threshX + '" y="116" font-family="Space Mono" font-size="7" fill="rgba(201,169,110,0.4)" text-anchor="middle">1.20× MIN</text>'
-          + '</svg>';
+        const threshPct = Math.round(0.60 * 100);
+        rowsHTML += '<div style="margin-top:4px;padding-top:6px;border-top:1px solid rgba(201,169,110,0.08);display:flex;justify-content:space-between;align-items:center">'
+          + '<span style="font-family:Space Mono,monospace;font-size:7px;letter-spacing:0.18em;color:rgba(201,169,110,0.35)">SENSITIVITY SCENARIOS · 50+ MODELED</span>'
+          + '<span style="font-family:Space Mono,monospace;font-size:7px;color:rgba(201,169,110,0.35)">1.20× FLOOR</span>'
+          + '</div>';
+        viz.innerHTML = '<div style="font-family:Space Mono,monospace;font-size:7.5px;letter-spacing:0.22em;color:rgba(201,169,110,0.38);margin-bottom:10px">DSCR · STRESS TEST MATRIX</div>'
+          + rowsHTML;
         const bodyEl = copyEl.querySelector('.body-text');
         if (bodyEl) bodyEl.after(viz);
         else copyEl.appendChild(viz);
-        setTimeout(function() { viz.style.opacity = '1'; }, 300);
+        setTimeout(function() {
+          viz.style.opacity = '1';
+          // Trigger animated bar fills after a short delay
+          setTimeout(function() {
+            viz.querySelectorAll('.uw-bar-fill').forEach(function(bar) {
+              bar.style.width = bar.getAttribute('data-target') + '%';
+            });
+          }, 120);
+        }, 300);
       }
     }
 
@@ -9442,7 +9546,37 @@ function goToSection(idx, dir) {
   const copy = document.querySelector('.scene-copy');
   if (copy) copy.classList.remove('visible'), copy.classList.add('hidden');
   const backdrop2 = document.getElementById('section-title-backdrop');
-  if (backdrop2) { backdrop2.classList.remove('visible'); backdrop2.classList.add('hidden'); }
+  if (backdrop2) {
+    backdrop2.classList.remove('visible');
+    backdrop2.classList.add('hidden');
+    // Staggered letter reveal — split text into spans after a brief pause
+    const sectionTitles = [
+      'Home','Firm Overview','Platform Edge','Senior Debt',
+      'Sub Capital','Equity','Execution','Underwriting','Compliance','Engage'
+    ];
+    const newTitle = (sectionTitles[idx] || '').toUpperCase();
+    setTimeout(function() {
+      // Build letter spans for stagger animation
+      const letters = newTitle.split('').map(function(ch, j) {
+        return '<span class="bd-letter" style="display:inline-block;opacity:0;transform:translateY(12px);transition:opacity 0.5s ease '
+          + (j * 0.042 + 0.05).toFixed(3) + 's,transform 0.5s ease '
+          + (j * 0.042 + 0.05).toFixed(3) + 's">'
+          + (ch === ' ' ? '&nbsp;' : ch) + '</span>';
+      }).join('');
+      backdrop2.innerHTML = letters;
+      backdrop2.classList.remove('hidden');
+      backdrop2.classList.add('visible');
+      // Trigger reveal
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          backdrop2.querySelectorAll('.bd-letter').forEach(function(span) {
+            span.style.opacity = '1';
+            span.style.transform = 'translateY(0)';
+          });
+        });
+      });
+    }, 420);
+  }
 
   // Update UI
   updateSectionUI(idx);
@@ -9622,19 +9756,49 @@ function animate() {
     unif.uTintStrength.value += (1.0 - unif.uTintStrength.value) * 0.02;
   }
 
-  // Particles drift
+  // Particles drift — velocity + harmonic layering
   if (window.particles) {
     const pos = window.particles.geometry.attributes.position;
     const phases = window.particles.userData.phases;
+    const vels  = window.particles.userData.velocities || new Float32Array(240 * 3);
+    // scrollSpeed coupling — faster scroll accelerates particles briefly
+    const scrollBoost = 1 + Math.abs(scrollAccum) * 0.8;
     for (let i = 0; i < 240; i++) {
-      pos.array[i * 3]     += Math.sin(t * 0.3 + phases[i]) * 0.002 * direction;
-      pos.array[i * 3 + 1] += Math.cos(t * 0.2 + phases[i] * 1.3) * 0.001;
-      pos.array[i * 3 + 2] += Math.sin(t * 0.15 + phases[i] * 0.7) * 0.0015;
-      // Wrap
+      // Evolve velocity with harmonic perturbation
+      vels[i * 3]     += Math.sin(t * 0.28 + phases[i] * 1.1) * 0.000025 * direction;
+      vels[i * 3 + 1] += Math.cos(t * 0.17 + phases[i] * 0.9) * 0.000018;
+      vels[i * 3 + 2] += Math.sin(t * 0.13 + phases[i] * 0.7) * 0.000012;
+      // Dampen (keeps velocities bounded)
+      vels[i * 3]     *= 0.992;
+      vels[i * 3 + 1] *= 0.994;
+      vels[i * 3 + 2] *= 0.995;
+      // Apply velocity
+      pos.array[i * 3]     += vels[i * 3]     * scrollBoost;
+      pos.array[i * 3 + 1] += vels[i * 3 + 1];
+      pos.array[i * 3 + 2] += vels[i * 3 + 2];
+      // Wrap Y
       if (pos.array[i * 3 + 1] >  8) pos.array[i * 3 + 1] = -8;
       if (pos.array[i * 3 + 1] < -8) pos.array[i * 3 + 1] =  8;
+      // Wrap X
+      if (pos.array[i * 3]     >  9) pos.array[i * 3]     = -9;
+      if (pos.array[i * 3]     < -9) pos.array[i * 3]     =  9;
     }
     pos.needsUpdate = true;
+  }
+  // Boss particles — slow, dreamy drift
+  if (window.bossParticles) {
+    const bpos = window.bossParticles.geometry.attributes.position;
+    const bph  = window.bossParticles.userData.phases;
+    for (let i = 0; i < 24; i++) {
+      bpos.array[i * 3]     += Math.sin(t * 0.11 + bph[i]) * 0.0008 * direction;
+      bpos.array[i * 3 + 1] += Math.cos(t * 0.07 + bph[i] * 1.2) * 0.0005;
+      bpos.array[i * 3 + 2] += Math.sin(t * 0.09 + bph[i] * 0.8) * 0.0004;
+      if (bpos.array[i * 3 + 1] >  8) bpos.array[i * 3 + 1] = -8;
+      if (bpos.array[i * 3 + 1] < -8) bpos.array[i * 3 + 1] =  8;
+    }
+    // Boss particles pulse opacity with section
+    window.bossParticles.material.opacity = 0.22 + Math.sin(t * 0.6) * 0.07;
+    bpos.needsUpdate = true;
   }
 
   // ───────────────────────────────────────────────
@@ -10213,6 +10377,31 @@ _menuObserver.observe(document.body, { attributes: true, attributeFilter: ['clas
 function showSectionCopy(idx) {
   const copy = document.querySelector('.scene-copy');
   if (!copy) return;
+
+  // Set backdrop text for this section (staggered letter reveal)
+  const backdropEl = document.getElementById('section-title-backdrop');
+  if (backdropEl) {
+    const _bdTitles = [
+      'Home','Firm Overview','Platform Edge','Senior Debt',
+      'Sub Capital','Equity','Execution','Underwriting','Compliance','Engage'
+    ];
+    const _bdTitle = (_bdTitles[idx] || '').toUpperCase();
+    const _bdLetters = _bdTitle.split('').map(function(ch, j) {
+      return '<span class="bd-letter" style="display:inline-block;opacity:0;transform:translateY(12px);transition:opacity 0.5s ease '
+        + (j * 0.042 + 0.06).toFixed(3) + 's,transform 0.5s ease '
+        + (j * 0.042 + 0.06).toFixed(3) + 's">'
+        + (ch === ' ' ? '&nbsp;' : ch) + '</span>';
+    }).join('');
+    backdropEl.innerHTML = _bdLetters;
+    backdropEl.classList.add('visible');
+    backdropEl.classList.remove('hidden');
+    setTimeout(function() {
+      backdropEl.querySelectorAll('.bd-letter').forEach(function(span) {
+        span.style.opacity = '1';
+        span.style.transform = 'translateY(0)';
+      });
+    }, 650);
+  }
 
   // Hide section-end indicator on every section show
   if (typeof window._hideSectionEndIndicator === 'function') window._hideSectionEndIndicator();
@@ -11258,10 +11447,21 @@ window.addEventListener('keydown', e => {
 
   // Per-section draw functions — each is a minimal atmospheric animation
   const DRAWFNS = {
-    // Section 0: Home — flowing particle field (ambient)
+    // Section 0: Home — subtle golden mote drift (complements 3D particles)
     0: function(t, W, H, c) {
-      // Show nothing — let the 3D logo dominate
       c.clearRect(0, 0, W, H);
+      // Draw 12 slow golden motes that drift gently across the background
+      for (var i = 0; i < 12; i++) {
+        var phase = (i / 12) * Math.PI * 2;
+        var x = ((t * 0.012 + i * 0.083) % 1) * W;
+        var y = H * 0.3 + Math.sin(t * 0.08 + phase) * H * 0.25 + i * (H * 0.045);
+        var alpha = (0.03 + Math.sin(t * 0.4 + phase) * 0.015) * (i % 3 === 0 ? 1.8 : 1);
+        var r = i % 3 === 0 ? 2.5 : 1.4;
+        c.beginPath();
+        c.arc(x, y, r, 0, Math.PI * 2);
+        c.fillStyle = 'rgba(201,169,110,' + alpha.toFixed(3) + ')';
+        c.fill();
+      }
     },
     // Section 1: Firm — slow diagonal light bars
     1: function(t, W, H, c) {
@@ -11299,24 +11499,41 @@ window.addEventListener('keydown', e => {
     2: function(t, W, H, c) {
       c.clearRect(0, 0, W, H);
       const pillars = [
-        { label: 'STRUCTURAL', height: 0.55 + Math.sin(t * 0.4) * 0.04, color: 'rgba(201,169,110,' },
-        { label: 'REACH',      height: 0.42 + Math.sin(t * 0.4 + 1.2) * 0.04, color: 'rgba(127,184,156,' },
-        { label: 'ACCESS',     height: 0.68 + Math.sin(t * 0.4 + 2.4) * 0.04, color: 'rgba(201,169,110,' }
+        { xOff: -W*0.13, hFactor: 0.56 + Math.sin(t * 0.38) * 0.04, r: 201, g: 169, b: 110 },
+        { xOff:  0,      hFactor: 0.74 + Math.sin(t * 0.32) * 0.04, r: 201, g: 169, b: 110 },
+        { xOff:  W*0.13, hFactor: 0.48 + Math.sin(t * 0.42 + 2.4) * 0.04, r: 127, g: 184, b: 156 }
       ];
-      const spacing = W / 5;
+      const cx = W / 2;
       const baseY = H * 0.78;
       pillars.forEach(function(p, i) {
-        const x = spacing * (i + 1.5);
-        const barH = H * p.height;
-        const grd = c.createLinearGradient(x - 14, baseY - barH, x + 14, baseY);
-        grd.addColorStop(0, p.color + '0.07)');
-        grd.addColorStop(1, p.color + '0.01)');
+        const x = cx + p.xOff;
+        const barH = H * 0.5 * p.hFactor;
+        const grd = c.createLinearGradient(0, baseY - barH, 0, baseY);
+        grd.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0.18)');
+        grd.addColorStop(0.5, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0.08)');
+        grd.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0.01)');
         c.fillStyle = grd;
-        c.fillRect(x - 14, baseY - barH, 28, barH);
+        c.fillRect(x - 5, baseY - barH, 10, barH);
         // Top accent line
-        c.fillStyle = p.color + '0.18)';
-        c.fillRect(x - 14, baseY - barH, 28, 1.5);
+        c.fillStyle = 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0.35)';
+        c.fillRect(x - 5, baseY - barH, 10, 1.5);
+        // Cap glow circle
+        var capAlpha = 0.4 + Math.sin(t * 0.55 + i * 1.1) * 0.15;
+        var grad2 = c.createRadialGradient(x, baseY - barH, 0, x, baseY - barH, 8);
+        grad2.addColorStop(0, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + capAlpha + ')');
+        grad2.addColorStop(1, 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0)');
+        c.beginPath();
+        c.arc(x, baseY - barH, 8, 0, Math.PI * 2);
+        c.fillStyle = grad2;
+        c.fill();
       });
+      // Ground baseline
+      c.beginPath();
+      c.moveTo(cx - W * 0.22, baseY);
+      c.lineTo(cx + W * 0.22, baseY);
+      c.strokeStyle = 'rgba(201,169,110,0.07)';
+      c.lineWidth = 0.8;
+      c.stroke();
     },
     // Section 3: Senior Debt — flowing horizontal data lines
     3: function(t, W, H, c) {
@@ -11337,31 +11554,38 @@ window.addEventListener('keydown', e => {
     // Section 4: Subordinate Capital — yield curve animation
     4: function(t, W, H, c) {
       c.clearRect(0, 0, W, H);
-      // Draw yield curve
-      c.beginPath();
-      const ampOffset = Math.sin(t * 0.3) * 0.015;
-      for (let x = 0; x <= W; x += 3) {
-        const pct = x / W;
-        const y = H * (0.62 - 0.25 * (1 - Math.exp(-pct * 3)) + ampOffset * Math.sin(pct * Math.PI * 2));
-        if (x === 0) c.moveTo(x, y);
-        else c.lineTo(x, y);
-      }
-      c.strokeStyle = 'rgba(201,169,110,0.07)';
-      c.lineWidth = 1.5;
-      c.stroke();
-      // Coupon level markers
-      const levels = [0.10, 0.12, 0.14];
-      levels.forEach(function(lv, i) {
-        const y = H * (0.62 - lv * 2.5);
-        c.setLineDash([4, 6]);
+      // Three animated tranche yield curves
+      var tranches = [
+        { steepness: 0.82, lift: 0,   speed: 0.22, amp: 3.8, r: 201, g: 169, b: 110, lw: 1.8 },
+        { steepness: 0.58, lift: 22,  speed: 0.17, amp: 2.6, r: 201, g: 169, b: 110, lw: 1.2 },
+        { steepness: 0.38, lift: 38,  speed: 0.28, amp: 1.8, r: 127, g: 184, b: 156, lw: 1.0 },
+      ];
+      var cy = H * 0.56;
+      tranches.forEach(function(cv, ci) {
         c.beginPath();
-        c.moveTo(W * 0.1, y);
-        c.lineTo(W * 0.9, y);
-        c.strokeStyle = 'rgba(201,169,110,' + (0.06 - i * 0.015) + ')';
-        c.lineWidth = 0.8;
+        for (var x = 0; x <= W; x += 2) {
+          var norm = x / W;
+          var y = cy + cv.lift - (norm * cv.steepness + Math.pow(norm, 2) * 0.35) * 70
+                + Math.sin(t * cv.speed + norm * 3.5 + ci * 1.1) * cv.amp;
+          x === 0 ? c.moveTo(x, y) : c.lineTo(x, y);
+        }
+        var alpha = 0.10 + Math.sin(t * 0.4 + ci * 0.9) * 0.035;
+        var grad = c.createLinearGradient(0, 0, W, 0);
+        grad.addColorStop(0, 'rgba(' + cv.r + ',' + cv.g + ',' + cv.b + ',0)');
+        grad.addColorStop(0.18, 'rgba(' + cv.r + ',' + cv.g + ',' + cv.b + ',' + alpha + ')');
+        grad.addColorStop(0.82, 'rgba(' + cv.r + ',' + cv.g + ',' + cv.b + ',' + alpha + ')');
+        grad.addColorStop(1, 'rgba(' + cv.r + ',' + cv.g + ',' + cv.b + ',0)');
+        c.strokeStyle = grad;
+        c.lineWidth = cv.lw;
         c.stroke();
-        c.setLineDash([]);
       });
+      // x-axis baseline
+      c.beginPath();
+      c.moveTo(W * 0.08, cy + 44);
+      c.lineTo(W * 0.92, cy + 44);
+      c.strokeStyle = 'rgba(201,169,110,0.06)';
+      c.lineWidth = 0.7;
+      c.stroke();
     },
     // Section 5: Equity — animated waterfall stack bars
     5: function(t, W, H, c) {
