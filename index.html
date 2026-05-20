@@ -9175,17 +9175,31 @@ document.addEventListener('mousemove', e => {
 
 let isDragging = false;
 let dragStartX = 0, dragStartY = 0;
+let dragPending = false;
+const DRAG_THRESHOLD = 8; // px of intentional movement required before drag activates
 
 document.addEventListener('pointerdown', e => {
-  isDragging = true;
+  if (e.pointerType === 'touch') return; // touch handled by touchstart/touchmove/touchend
+  dragPending = true;
+  isDragging = false;
   dragStartX = e.clientX;
   dragStartY = e.clientY;
-  document.body.style.cursor = 'none';
-  document.body.classList.add('is-dragging');
-  cursor?.classList.add('cursor-drag');
 });
 
 document.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch') return;
+  if (dragPending && !isDragging) {
+    const dist = Math.sqrt(Math.pow(e.clientX - dragStartX, 2) + Math.pow(e.clientY - dragStartY, 2));
+    if (dist >= DRAG_THRESHOLD) {
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      document.body.style.cursor = 'none';
+      document.body.classList.add('is-dragging');
+      cursor?.classList.add('cursor-drag');
+    }
+    return;
+  }
   if (!isDragging) return;
   const dx = e.clientX - dragStartX;
   const dy = e.clientY - dragStartY;
@@ -9195,10 +9209,42 @@ document.addEventListener('pointermove', e => {
   window.dragRotXTarget = Math.max(-0.9, Math.min(0.9, (window.dragRotXTarget ?? 0) + dy * 0.005));
 });
 
-document.addEventListener('pointerup', () => {
+document.addEventListener('pointerup', e => {
+  if (e.pointerType === 'touch') return;
   isDragging = false;
+  dragPending = false;
   document.body.classList.remove('is-dragging');
   cursor?.classList.remove('cursor-drag');
+});
+
+// ─── MOUSE HIJACK ─────────────────────────────────────────────────────────
+// Cursor dwell near top/bottom 9% of viewport → auto-transition after 700ms
+let _hijackTimer = null;
+let _hijackDir = 0;
+const HIJACK_ZONE = 0.09;   // top/bottom 9% of viewport
+const HIJACK_DELAY = 700;   // ms dwell before firing
+
+document.addEventListener('mousemove', e => {
+  if (!introComplete || isTransitioning) { clearTimeout(_hijackTimer); _hijackTimer = null; return; }
+  const rel = e.clientY / window.innerHeight;
+  let newDir = 0;
+  if (rel > (1 - HIJACK_ZONE)) newDir = 1;
+  else if (rel < HIJACK_ZONE) newDir = -1;
+  if (newDir !== 0 && newDir !== _hijackDir) {
+    clearTimeout(_hijackTimer);
+    _hijackDir = newDir;
+    _hijackTimer = setTimeout(() => {
+      if (!isTransitioning) {
+        const next = Math.max(0, Math.min(9, activeIdx + _hijackDir));
+        if (next !== activeIdx) { scrollAccum = 0; goToSection(next, _hijackDir); }
+      }
+      _hijackTimer = null;
+    }, HIJACK_DELAY);
+  } else if (newDir === 0) {
+    clearTimeout(_hijackTimer);
+    _hijackTimer = null;
+    _hijackDir = 0;
+  }
 });
 
 // ─── 3. RAYCASTER PART-PICKING ───────────────────────────────────────────────
@@ -10595,19 +10641,42 @@ window.addEventListener('wheel', handleWheel, { passive: false });
 // 8. TOUCH HANDLING (40px threshold)
 // ---------------------------------------------------------------------------
 let touchStartY = 0;
-window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
-window.addEventListener('touchend', e => {
-  if (!introComplete || isTransitioning) return;
-  const dy = touchStartY - e.changedTouches[0].clientY;
+let touchCurY = 0;
+let touchFired = false;
+
+window.addEventListener('touchstart', e => {
+  touchStartY = e.touches[0].clientY;
+  touchCurY = touchStartY;
+  touchFired = false;
+}, { passive: true });
+
+window.addEventListener('touchmove', e => {
+  if (!introComplete || isTransitioning || touchFired) return;
+  touchCurY = e.touches[0].clientY;
+  const dy = touchStartY - touchCurY;
   if (Math.abs(dy) > 40) {
+    touchFired = true;
     const dir = dy > 0 ? 1 : -1;
-    // Hybrid scroll for execution section
     if (activeIdx === 6 && typeof window._execStageReveal === 'function') {
       const consumed = window._execStageReveal(Math.abs(dy) * dir);
       if (consumed) return;
     }
     const next = Math.max(0, Math.min(9, activeIdx + dir));
-    if (next !== activeIdx) goToSection(next, dir);
+    if (next !== activeIdx) { scrollAccum = 0; goToSection(next, dir); }
+  }
+}, { passive: true });
+
+window.addEventListener('touchend', e => {
+  if (!introComplete || isTransitioning || touchFired) return;
+  const dy = touchStartY - e.changedTouches[0].clientY;
+  if (Math.abs(dy) > 40) {
+    const dir = dy > 0 ? 1 : -1;
+    if (activeIdx === 6 && typeof window._execStageReveal === 'function') {
+      const consumed = window._execStageReveal(Math.abs(dy) * dir);
+      if (consumed) return;
+    }
+    const next = Math.max(0, Math.min(9, activeIdx + dir));
+    if (next !== activeIdx) { scrollAccum = 0; goToSection(next, dir); }
   }
 }, { passive: true });
 
